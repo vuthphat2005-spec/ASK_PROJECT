@@ -172,11 +172,40 @@ function MboGradingTab({ mbos, supabase, onRefresh }: { mbos: any[], supabase: a
 
 function PeerReviewTab({ peers, criteria, currentUser, supabase }: { peers: any[], criteria: any[], currentUser: any, supabase: any }) {
   const [selectedPeer, setSelectedPeer] = useState<string | null>(null);
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [comments, setComments] = useState<Record<string, string>>({});
   
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Đã lưu đánh giá thành công!");
-    setSelectedPeer(null);
+    if (!currentUser || !selectedPeer) return;
+
+    // Build insert payload
+    const inserts = Object.entries(ratings).map(([tieuChiId, score]) => ({
+      nguoi_danh_gia_id: currentUser.id,
+      nguoi_duoc_danh_gia_id: selectedPeer,
+      tieu_chi_id: tieuChiId,
+      diem_danh_gia: score * 20, // 5 sao = 100 điểm
+      nhan_xet: comments[tieuChiId] || ""
+    }));
+
+    if (inserts.length === 0) {
+      alert("Vui lòng đánh giá ít nhất 1 tiêu chí.");
+      return;
+    }
+
+    const { error } = await supabase.from("danh_gia_cheo").insert(inserts);
+    if (error) {
+      alert("Lỗi: " + error.message);
+    } else {
+      alert("Đã lưu đánh giá thành công!");
+      setSelectedPeer(null);
+      setRatings({});
+      setComments({});
+    }
+  };
+
+  const handleStarClick = (tieuChiId: string, star: number) => {
+    setRatings(prev => ({ ...prev, [tieuChiId]: star }));
   };
 
   return (
@@ -202,7 +231,7 @@ function PeerReviewTab({ peers, criteria, currentUser, supabase }: { peers: any[
       ) : (
         <div className="bg-white/5 border border-white/10 rounded-xl p-6 relative">
           <button 
-            onClick={() => setSelectedPeer(null)}
+            onClick={() => { setSelectedPeer(null); setRatings({}); setComments({}); }}
             className="absolute top-4 right-4 text-gray-400 hover:text-white"
           >
             Đóng
@@ -212,25 +241,41 @@ function PeerReviewTab({ peers, criteria, currentUser, supabase }: { peers: any[
           </h3>
           
           <form onSubmit={handleReviewSubmit} className="space-y-6">
-            {criteria.map(item => (
-              <div key={item.id} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="font-medium">
-                    {item.ten_tieu_chi} 
-                    <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-white/10 text-gray-300">{item.nhom}</span>
-                  </label>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <Star key={star} className="w-5 h-5 text-gray-600 hover:text-yellow-400 cursor-pointer transition-colors" />
-                    ))}
+            {criteria.map(item => {
+              const currentStar = ratings[item.id] || 0;
+              return (
+                <div key={item.id} className="space-y-2 bg-black/20 p-4 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="font-medium text-white">
+                      {item.ten_tieu_chi} 
+                      <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${item.nhom === 'Attitude' ? 'bg-purple-500/20 text-purple-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                        {item.nhom}
+                      </span>
+                    </label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star 
+                          key={star} 
+                          onClick={() => handleStarClick(item.id, star)}
+                          className={`w-6 h-6 cursor-pointer transition-colors ${star <= currentStar ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-yellow-400/50'}`} 
+                        />
+                      ))}
+                    </div>
                   </div>
+                  <p className="text-xs text-gray-400 mb-2">{item.mo_ta}</p>
+                  <input 
+                    type="text" 
+                    placeholder="Nhận xét (không bắt buộc)..." 
+                    value={comments[item.id] || ""}
+                    onChange={(e) => setComments(prev => ({ ...prev, [item.id]: e.target.value }))}
+                    className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary/50"
+                  />
                 </div>
-                <p className="text-xs text-gray-400">{item.mo_ta}</p>
-              </div>
-            ))}
+              );
+            })}
             
             <div className="pt-4">
-              <button type="submit" className="glass-button w-full justify-center">
+              <button type="submit" className="glass-button w-full justify-center py-3">
                 Hoàn tất đánh giá
               </button>
             </div>
