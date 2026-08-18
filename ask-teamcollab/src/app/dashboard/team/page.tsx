@@ -31,6 +31,18 @@ export default function TeamDashboardPage() {
         tieu_chi_ask ( nhom )
       `);
 
+      // Fetch Weights
+      const { data: config } = await supabase.from("cau_hinh_he_thong").select("*");
+      let wK = 33.33, wA = 33.33, wS = 33.34;
+      if (config && config.length > 0) {
+        const k = config.find(c => c.id === 'weight_k')?.gia_tri;
+        const a = config.find(c => c.id === 'weight_a')?.gia_tri;
+        const s = config.find(c => c.id === 'weight_s')?.gia_tri;
+        if (k) wK = parseFloat(k);
+        if (a) wA = parseFloat(a);
+        if (s) wS = parseFloat(s);
+      }
+
       if (!users) return;
 
       const processedData = users.map(user => {
@@ -52,7 +64,7 @@ export default function TeamDashboardPage() {
           ? userSkill.reduce((acc, curr) => acc + (curr.diem_danh_gia || 0), 0) / userSkill.length
           : 0;
 
-        const totalScore = (kScore + aScore + sScore) / 3;
+        const totalScore = (kScore * wK + aScore * wA + sScore * wS) / 100;
 
         return {
           ...user,

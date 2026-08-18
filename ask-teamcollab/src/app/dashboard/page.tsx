@@ -55,7 +55,19 @@ export default async function DashboardPage() {
     { subject: 'Skill (360°)', A: Math.round(avgS), fullMark: 100 },
   ];
 
-  const totalScore = (avgK * 0.3) + (avgA * 0.35) + (avgS * 0.35);
+  // Fetch Weights
+  const { data: config } = await supabase.from("cau_hinh_he_thong").select("*");
+  let wK = 33.33, wA = 33.33, wS = 33.34;
+  if (config && config.length > 0) {
+    const k = config.find(c => c.id === 'weight_k')?.gia_tri;
+    const a = config.find(c => c.id === 'weight_a')?.gia_tri;
+    const s = config.find(c => c.id === 'weight_s')?.gia_tri;
+    if (k) wK = parseFloat(k);
+    if (a) wA = parseFloat(a);
+    if (s) wS = parseFloat(s);
+  }
+
+  const totalScore = (avgK * wK + avgA * wA + avgS * wS) / 100;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -105,7 +117,7 @@ export default async function DashboardPage() {
               {totalScore.toFixed(1)}
             </div>
             <p className="text-sm text-gray-400 mt-2">
-              (30% MBO + 35% Attitude + 35% Skill)
+              ({wK}% K + {wA}% A + {wS}% S)
             </p>
           </div>
         </div>
