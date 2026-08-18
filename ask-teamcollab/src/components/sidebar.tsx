@@ -18,7 +18,7 @@ const navItems = [
   { href: "/dashboard/admin/guide", icon: Settings, label: "Cẩm nang Hệ thống" },
 ];
 
-export default function Sidebar({ role, user }: { role: string, user?: any }) {
+export default function Sidebar({ role, realRole, user }: { role: string, realRole?: string, user?: any }) {
   const pathname = usePathname();
   const supabase = createClient();
   const [isOpen, setIsOpen] = useState(false);
@@ -81,6 +81,31 @@ export default function Sidebar({ role, user }: { role: string, user?: any }) {
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {realRole === "Admin" && (
+          <div className="px-4 py-3 bg-white/5 border-b border-white/10">
+            <label className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1 block">
+              Góc nhìn (Impersonate)
+            </label>
+            <select
+              value={role}
+              onChange={(e) => {
+                const selected = e.target.value;
+                if (selected === "Admin") {
+                  document.cookie = "impersonated_role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                } else {
+                  document.cookie = `impersonated_role=${selected}; path=/; max-age=86400`;
+                }
+                window.location.reload();
+              }}
+              className="w-full bg-[#111] border border-white/20 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-primary transition-colors"
+            >
+              <option value="Admin">Admin</option>
+              <option value="QuanLy">QuanLy</option>
+              <option value="ChuyenVien">ChuyenVien</option>
+            </select>
+          </div>
+        )}
 
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {navItems.map((item) => {

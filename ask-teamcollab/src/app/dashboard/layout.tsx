@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import Sidebar from "@/components/sidebar";
 
 export default async function DashboardLayout({
@@ -21,11 +22,20 @@ export default async function DashboardLayout({
     .eq("email", session.user.email)
     .single();
 
-  const role = user?.vai_tro || "ChuyenVien";
+  const realRole = user?.vai_tro || "ChuyenVien";
+  let role = realRole;
+  
+  if (realRole === "Admin") {
+    const cookieStore = await cookies();
+    const impRole = cookieStore.get("impersonated_role")?.value;
+    if (impRole) {
+      role = impRole;
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar role={role} user={user} />
+      <Sidebar role={role} realRole={realRole} user={user} />
       
       <main className="flex-1 overflow-y-auto z-10 p-4 pt-20 md:p-8">
         {children}

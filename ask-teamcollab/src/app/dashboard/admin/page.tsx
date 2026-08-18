@@ -30,12 +30,14 @@ export default function AdminPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [userRole, setUserRole] = useState("ChuyenVien");
   const [userStatus, setUserStatus] = useState("HoatDong");
+  const [userChucVu, setUserChucVu] = useState("");
 
   // Criteria Form
   const [critId, setCritId] = useState("");
   const [critName, setCritName] = useState("");
   const [critGroup, setCritGroup] = useState("Attitude");
   const [critDesc, setCritDesc] = useState("");
+  const [critThangDiem, setCritThangDiem] = useState(5);
 
   useEffect(() => {
     fetchData();
@@ -84,7 +86,8 @@ export default function AdminPage() {
     e.preventDefault();
     const { error } = await supabase.from("nhan_su").update({
       vai_tro: userRole,
-      trang_thai: userStatus
+      trang_thai: userStatus,
+      chuc_vu: userChucVu
     }).eq("id", selectedUserId);
 
     if (error) alert("Lỗi: " + error.message);
@@ -107,7 +110,8 @@ export default function AdminPage() {
       const { error } = await supabase.from("tieu_chi_ask").update({
         ten_tieu_chi: critName,
         nhom: critGroup,
-        mo_ta: critDesc
+        mo_ta: critDesc,
+        thang_diem_toi_da: critThangDiem
       }).eq("id", critId);
       if (error) alert("Lỗi: " + error.message);
       else {
@@ -118,7 +122,8 @@ export default function AdminPage() {
       const { error } = await supabase.from("tieu_chi_ask").insert([{
         ten_tieu_chi: critName,
         nhom: critGroup,
-        mo_ta: critDesc
+        mo_ta: critDesc,
+        thang_diem_toi_da: critThangDiem
       }]);
       if (error) alert("Lỗi: " + error.message);
       else {
@@ -150,6 +155,7 @@ export default function AdminPage() {
     setCritName("");
     setCritGroup("Attitude");
     setCritDesc("");
+    setCritThangDiem(5);
     setShowCriteriaModal(true);
   };
 
@@ -159,6 +165,7 @@ export default function AdminPage() {
     setCritName(item.ten_tieu_chi);
     setCritGroup(item.nhom);
     setCritDesc(item.mo_ta);
+    setCritThangDiem(item.thang_diem_toi_da || 5);
     setShowCriteriaModal(true);
   };
 
@@ -166,6 +173,7 @@ export default function AdminPage() {
     setSelectedUserId(user.id);
     setUserRole(user.vai_tro);
     setUserStatus(user.trang_thai);
+    setUserChucVu(user.chuc_vu || "");
     setShowEditUserModal(true);
   };
 
