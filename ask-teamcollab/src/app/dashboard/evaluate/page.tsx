@@ -207,8 +207,8 @@ function PeerReviewTab({ peers, criteria, currentUser, supabase }: { peers: any[
         nguoi_danh_gia_id: currentUser.id,
         nguoi_duoc_danh_gia_id: selectedPeer,
         tieu_chi_id: tieuChiId,
-        diem_danh_gia: (score / maxScore) * 100,
-        nhan_xet: comments[tieuChiId] || ""
+        diem_sao: (score / maxScore) * 100,
+        gop_y: comments[tieuChiId] || ""
       };
     });
 
