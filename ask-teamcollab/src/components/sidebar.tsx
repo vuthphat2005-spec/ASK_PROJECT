@@ -36,6 +36,10 @@ export default function Sidebar({ role }: { role: string }) {
 
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navItems.map((item) => {
+          // Lọc hiển thị theo quyền
+          if (item.href === "/dashboard/admin" && role !== "Admin") return null;
+          if (item.href === "/dashboard/projects" && role !== "Admin" && role !== "QuanLy") return null;
+
           const isActive = pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard");
           return (
             <Link
