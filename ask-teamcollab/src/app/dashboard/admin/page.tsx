@@ -454,6 +454,7 @@ export default function AdminPage() {
                 <label className="block text-sm font-medium text-gray-400 mb-1">Trạng thái</label>
                 <select value={userStatus} onChange={(e) => setUserStatus(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-2 text-white">
                   <option value="HoatDong">Hoạt động</option>
+                  <option value="ChoDuyet">Chờ duyệt (Mới đăng ký)</option>
                   <option value="DaNghi">Khóa / Đã nghỉ</option>
                 </select>
               </div>
