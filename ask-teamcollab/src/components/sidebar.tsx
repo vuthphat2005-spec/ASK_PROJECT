@@ -15,7 +15,7 @@ const navItems = [
   { href: "/dashboard/admin/guide", icon: Settings, label: "Cẩm nang Hệ thống" },
 ];
 
-export default function Sidebar({ role }: { role: string }) {
+export default function Sidebar({ role, user }: { role: string, user?: any }) {
   const pathname = usePathname();
   const supabase = createClient();
 
@@ -27,9 +27,13 @@ export default function Sidebar({ role }: { role: string }) {
   return (
     <aside className="w-64 flex-shrink-0 border-r border-white/10 glass-panel h-screen sticky top-0 flex flex-col z-20">
       <div className="p-6 border-b border-white/10 flex items-center gap-3">
-        <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center font-bold text-primary">
-          TC
-        </div>
+        {user?.avatar_url ? (
+          <img src={user.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full object-cover border border-white/20" />
+        ) : (
+          <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center font-bold text-primary">
+            {user?.ho_ten ? user.ho_ten.charAt(0).toUpperCase() : "TC"}
+          </div>
+        )}
         <div>
           <h2 className="font-bold text-lg tracking-tight">TeamCollab</h2>
           <p className="text-xs text-muted-foreground">{role}</p>

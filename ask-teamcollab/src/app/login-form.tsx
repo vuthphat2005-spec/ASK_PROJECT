@@ -9,14 +9,19 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot_password">("login");
   const [hoTen, setHoTen] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || (mode === "register" && !hoTen)) {
+    if (mode === "forgot_password" && !email) {
+      setError("Vui lòng nhập email để khôi phục mật khẩu.");
+      return;
+    }
+    
+    if (mode !== "forgot_password" && (!email || !password || (mode === "register" && !hoTen))) {
       setError("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
@@ -31,7 +36,7 @@ export default function LoginForm() {
         });
         if (error) throw error;
         window.location.href = "/dashboard";
-      } else {
+      } else if (mode === "register") {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -49,6 +54,13 @@ export default function LoginForm() {
         }
         
         setError("Đăng ký thành công! Vui lòng kiểm tra email (nếu có yêu cầu xác thực) hoặc đăng nhập.");
+        setMode("login");
+      } else if (mode === "forgot_password") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/update-password`,
+        });
+        if (error) throw error;
+        setError("Đã gửi link khôi phục! Vui lòng kiểm tra hộp thư email của bạn.");
         setMode("login");
       }
     } catch (err: any) {
@@ -108,15 +120,28 @@ export default function LoginForm() {
             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
           />
         </div>
-        <div>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mật khẩu"
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-          />
-        </div>
+        {mode !== "forgot_password" && (
+          <div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Mật khẩu"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+            />
+          </div>
+        )}
+        {mode === "login" && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => { setMode("forgot_password"); setError(null); }}
+              className="text-xs text-primary hover:text-primary/80 transition-colors"
+            >
+              Quên mật khẩu?
+            </button>
+          </div>
+        )}
         <button
           type="submit"
           disabled={isLoading}
@@ -127,12 +152,20 @@ export default function LoginForm() {
           ) : (
             <LogIn className="w-5 h-5 text-white/80 group-hover:text-white transition-colors" />
           )}
-          <span>{isLoading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập Hệ thống" : "Tạo Tài khoản"}</span>
+          <span>{isLoading ? "Đang xử lý..." : mode === "login" ? "Đăng nhập Hệ thống" : mode === "register" ? "Tạo Tài khoản" : "Gửi link khôi phục"}</span>
         </button>
       </form>
       
       <div className="mt-6 text-xs text-muted-foreground/60 text-center">
-        {mode === "login" ? "Chưa có tài khoản? Chuyển sang Đăng ký." : "Đã có tài khoản? Chuyển sang Đăng nhập."}
+        {mode === "forgot_password" ? (
+          <button type="button" onClick={() => setMode("login")} className="hover:text-white transition-colors">
+            Quay lại Đăng nhập
+          </button>
+        ) : mode === "login" ? (
+          <span>Chưa có tài khoản? <button type="button" onClick={() => setMode("register")} className="text-primary hover:underline">Chuyển sang Đăng ký.</button></span>
+        ) : (
+          <span>Đã có tài khoản? <button type="button" onClick={() => setMode("login")} className="text-primary hover:underline">Chuyển sang Đăng nhập.</button></span>
+        )}
       </div>
     </div>
   );

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { User, Lock, Save } from "lucide-react";
+import { User, Lock, Save, Camera, Loader2 } from "lucide-react";
+import Image from "next/image";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
@@ -12,6 +13,8 @@ export default function ProfilePage() {
   // Form states
   const [hoTen, setHoTen] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [message, setMessage] = useState<{type: "success" | "error", text: string} | null>(null);
 
   const supabase = createClient();
@@ -35,11 +38,55 @@ export default function ProfilePage() {
       if (userData) {
         setUser(userData);
         setHoTen(userData.ho_ten);
+        setAvatarUrl(userData.avatar_url);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploadingAvatar(true);
+      setMessage(null);
+
+      if (!e.target.files || e.target.files.length === 0) {
+        throw new Error("Vui lòng chọn một file ảnh.");
+      }
+
+      const file = e.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update database
+      const { error: updateError } = await supabase
+        .from('nhan_su')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      setMessage({ type: "success", text: "Cập nhật ảnh đại diện thành công!" });
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message || "Lỗi khi upload ảnh!" });
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -97,6 +144,39 @@ export default function ProfilePage() {
                 {message.text}
               </div>
             )}
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold border-b border-white/10 pb-2">Ảnh Đại diện</h3>
+              
+              <div className="flex items-center gap-6">
+                <div className="relative w-24 h-24 rounded-full overflow-hidden bg-primary/20 border border-primary/30 flex items-center justify-center shrink-0">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-10 h-10 text-primary/50" />
+                  )}
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <Loader2 className="w-6 h-6 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="bg-white/10 hover:bg-white/20 text-white text-sm font-medium py-2 px-4 rounded-lg cursor-pointer transition-colors inline-flex items-center gap-2">
+                    <Camera className="w-4 h-4" />
+                    Đổi ảnh đại diện
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleAvatarUpload}
+                      disabled={uploadingAvatar}
+                      className="hidden" 
+                    />
+                  </label>
+                  <p className="text-xs text-gray-400 mt-2">Định dạng hỗ trợ: JPG, PNG, WEBP (Tối đa 2MB)</p>
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold border-b border-white/10 pb-2">Thông tin Cơ bản</h3>

@@ -17,7 +17,7 @@ export default async function DashboardLayout({
   // Lấy thông tin user từ bảng nhan_su
   const { data: user } = await supabase
     .from("nhan_su")
-    .select("vai_tro")
+    .select("vai_tro, ho_ten, avatar_url")
     .eq("email", session.user.email)
     .single();
 
@@ -25,7 +25,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar role={role} />
+      <Sidebar role={role} user={user} />
       
       <main className="flex-1 overflow-y-auto z-10 p-8">
         {children}
