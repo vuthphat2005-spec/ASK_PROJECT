@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { CheckSquare, Users, Star } from "lucide-react";
+import { CheckSquare, Users, Star, Download } from "lucide-react";
 
 export default function EvaluatePage() {
   const [activeTab, setActiveTab] = useState<"mbo" | "peer">("peer");
@@ -124,9 +124,30 @@ function MboGradingTab({ mbos, supabase, onRefresh }: { mbos: any[], supabase: a
     onRefresh();
   };
 
+  const exportToCSV = () => {
+    if (mbos.length === 0) return alert("Không có dữ liệu để xuất");
+    const headers = "Nhân sự,Dự án,Mục tiêu,Tiến độ báo cáo (%),Điểm nghiệm thu K";
+    const rows = mbos.map(m => 
+      `"${m.nhan_su?.ho_ten}","${m.du_an?.ten_du_an}","${m.noi_dung}",${m.tien_do},${m.diem_nghiem_thu || 0}`
+    );
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers, ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `nghiem_thu_mbo.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Nghiệm thu tiến độ MBO</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Nghiệm thu tiến độ MBO</h2>
+        <button onClick={exportToCSV} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+          <Download className="w-4 h-4" /> Xuất CSV
+        </button>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>

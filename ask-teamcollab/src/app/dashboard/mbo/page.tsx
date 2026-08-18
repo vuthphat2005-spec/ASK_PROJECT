@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { CheckSquare, Plus, X, Save } from "lucide-react";
+import { CheckSquare, Plus, X, Save, Download, ListTodo } from "lucide-react";
 
 export default function MBOTasksPage() {
-  const [mboList, setMboList] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<"my_tasks" | "all_tasks">("my_tasks");
+  const [myMboList, setMyMboList] = useState<any[]>([]);
+  const [allMboList, setAllMboList] = useState<any[]>([]);
+  
   const [projects, setProjects] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -38,20 +41,22 @@ export default function MBOTasksPage() {
     if (user) setCurrentUser(user);
 
     // Lấy MBO của user này
-    const { data: mbos } = await supabase
+    const { data: myMbos } = await supabase
       .from("muc_tieu_mbo")
       .select(`*, du_an ( ten_du_an, trang_thai )`)
       .eq("nhan_su_id", user?.id || "");
-    if (mbos) setMboList(mbos);
+    if (myMbos) setMyMboList(myMbos);
 
-    // Nếu là Admin hoặc QuanLy, lấy list dự án và nhân sự để giao việc
+    // Nếu là Admin hoặc QuanLy, lấy list dự án, nhân sự và TẤT CẢ MBO
     if (user && (user.vai_tro === "Admin" || user.vai_tro === "QuanLy")) {
-      const [pRes, uRes] = await Promise.all([
+      const [pRes, uRes, allMboRes] = await Promise.all([
         supabase.from("du_an").select("id, ten_du_an").eq("trang_thai", "DangChay"),
-        supabase.from("nhan_su").select("id, ho_ten").eq("trang_thai", "HoatDong")
+        supabase.from("nhan_su").select("id, ho_ten").eq("trang_thai", "HoatDong"),
+        supabase.from("muc_tieu_mbo").select(`*, du_an ( ten_du_an, trang_thai ), nhan_su ( ho_ten )`)
       ]);
       if (pRes.data) setProjects(pRes.data);
       if (uRes.data) setUsers(uRes.data);
+      if (allMboRes.data) setAllMboList(allMboRes.data);
     }
 
     setLoading(false);
@@ -91,9 +96,38 @@ export default function MBOTasksPage() {
     }
   };
 
+  const exportToCSV = () => {
+    const listToExport = activeTab === "my_tasks" ? myMboList : allMboList;
+    if (listToExport.length === 0) return alert("Không có dữ liệu để xuất");
+    
+    const headers = activeTab === "my_tasks" 
+      ? "Tên dự án,Mục tiêu,Trọng số (%),Tiến độ (%)"
+      : "Nhân sự,Tên dự án,Mục tiêu,Trọng số (%),Tiến độ (%)";
+
+    const rows = listToExport.map(m => {
+      if (activeTab === "my_tasks") {
+        return `"${m.du_an?.ten_du_an}","${m.noi_dung}",${m.trong_so},${m.tien_do}`;
+      } else {
+        return `"${m.nhan_su?.ho_ten}","${m.du_an?.ten_du_an}","${m.noi_dung}",${m.trong_so},${m.tien_do}`;
+      }
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers, ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `mbo_danh_sach.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const isManager = currentUser?.vai_tro === "Admin" || currentUser?.vai_tro === "QuanLy";
+  const displayList = activeTab === "my_tasks" ? myMboList : allMboList;
+
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex items-center justify-between">
+    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <CheckSquare className="w-8 h-8 text-primary" />
           <div>
@@ -101,23 +135,51 @@ export default function MBOTasksPage() {
             <p className="text-muted-foreground">Cập nhật tiến độ hoàn thành các mục tiêu được giao</p>
           </div>
         </div>
-        {currentUser && (currentUser.vai_tro === "Admin" || currentUser.vai_tro === "QuanLy") && (
-          <button onClick={() => setShowAssignModal(true)} className="glass-button flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Giao mục tiêu MBO
+        <div className="flex gap-4 items-center">
+          <button onClick={exportToCSV} className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+            <Download className="w-4 h-4" /> Xuất CSV
           </button>
-        )}
+          {isManager && (
+            <button onClick={() => setShowAssignModal(true)} className="glass-button flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Giao mục tiêu MBO
+            </button>
+          )}
+        </div>
       </div>
+
+      {isManager && (
+        <div className="flex gap-4 border-b border-white/10 pb-4">
+          <button
+            onClick={() => setActiveTab("my_tasks")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              activeTab === "my_tasks" ? "bg-primary text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <CheckSquare className="w-5 h-5" />
+            Việc của tôi
+          </button>
+          <button
+            onClick={() => setActiveTab("all_tasks")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              activeTab === "all_tasks" ? "bg-primary text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <ListTodo className="w-5 h-5" />
+            Quản lý toàn bộ MBO
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           <div className="col-span-full py-8 text-center text-gray-400">Đang tải dữ liệu...</div>
-        ) : mboList.length === 0 ? (
+        ) : displayList.length === 0 ? (
           <div className="col-span-full glass-panel p-8 text-center text-gray-400 rounded-2xl">
-            Bạn chưa có mục tiêu MBO nào được phân công.
+            Chưa có mục tiêu MBO nào được hiển thị.
           </div>
         ) : (
-          mboList.map((mbo) => (
+          displayList.map((mbo) => (
             <div key={mbo.id} className="glass-panel p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden group hover:border-primary/50 transition-colors">
               <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
               
@@ -127,6 +189,10 @@ export default function MBOTasksPage() {
                 </span>
                 <span className="text-xs text-gray-400">Trọng số: <strong className="text-white">{mbo.trong_so}%</strong></span>
               </div>
+              
+              {activeTab === "all_tasks" && (
+                <div className="text-xs text-primary font-medium">Nhân sự: {mbo.nhan_su?.ho_ten}</div>
+              )}
               
               <h3 className="font-semibold text-lg line-clamp-2 text-white">{mbo.noi_dung}</h3>
               
@@ -141,7 +207,7 @@ export default function MBOTasksPage() {
                     style={{ width: `${mbo.tien_do}%` }}
                   />
                 </div>
-                {mbo.du_an?.trang_thai === 'DangChay' && (
+                {mbo.du_an?.trang_thai === 'DangChay' && (activeTab === "my_tasks" || isManager) && (
                   <button 
                     onClick={() => {
                       setSelectedMbo(mbo);

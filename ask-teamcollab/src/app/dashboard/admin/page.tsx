@@ -12,6 +12,7 @@ export default function AdminPage() {
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentUserRole, setCurrentUserRole] = useState("ChuyenVien");
 
   const supabase = createClient();
 
@@ -38,6 +39,12 @@ export default function AdminPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: user } = await supabase.from("nhan_su").select("vai_tro").eq("email", session.user.email).single();
+        if (user) setCurrentUserRole(user.vai_tro);
+      }
+
       const [usersResponse, criteriaResponse] = await Promise.all([
         supabase.from("nhan_su").select("*").order("created_at", { ascending: false }),
         supabase.from("tieu_chi_ask").select("*").order("nhom")
@@ -235,8 +242,12 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 flex justify-end gap-2">
-                        <button onClick={() => openEditUser(user)} className="p-2 text-gray-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
-                        <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-gray-400 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        {currentUserRole === "Admin" && (
+                          <>
+                            <button onClick={() => openEditUser(user)} className="p-2 text-gray-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteUser(user.id)} className="p-2 text-gray-400 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -251,10 +262,12 @@ export default function AdminPage() {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Tiêu chí Đánh giá</h2>
-              <button onClick={openAddCriteria} className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 text-primary px-4 py-2 rounded-lg transition-colors">
-                <Plus className="w-4 h-4" />
-                Thêm Tiêu chí
-              </button>
+              {currentUserRole === "Admin" && (
+                <button onClick={openAddCriteria} className="flex items-center gap-2 bg-primary/20 hover:bg-primary/30 text-primary px-4 py-2 rounded-lg transition-colors">
+                  <Plus className="w-4 h-4" />
+                  Thêm Tiêu chí
+                </button>
+              )}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -279,8 +292,12 @@ export default function AdminPage() {
                       </td>
                       <td className="py-3 px-4 text-gray-400 text-sm max-w-xs truncate" title={item.mo_ta}>{item.mo_ta}</td>
                       <td className="py-3 px-4 flex justify-end gap-2">
-                        <button onClick={() => openEditCriteria(item)} className="p-2 text-gray-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
-                        <button onClick={() => handleDeleteCriteria(item.id)} className="p-2 text-gray-400 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        {currentUserRole === "Admin" && (
+                          <>
+                            <button onClick={() => openEditCriteria(item)} className="p-2 text-gray-400 hover:text-primary transition-colors"><Edit2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteCriteria(item.id)} className="p-2 text-gray-400 hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
