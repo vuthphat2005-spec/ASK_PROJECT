@@ -49,7 +49,8 @@ export default function LoginForm() {
             id: data.user.id,
             email: email,
             ho_ten: hoTen,
-            vai_tro: "ChuyenVien"
+            vai_tro: "ChuyenVien",
+            trang_thai: "ChoDuyet"
           }]);
         }
         
