@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { Users, Settings, Plus, Edit2, Trash2, X, Download, Search } from "lucide-react";
+import { Users, Settings, Plus, Edit2, Trash2, X, Download, Search, Sliders } from "lucide-react";
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<"users" | "criteria">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "criteria" | "config">("users");
   const [users, setUsers] = useState<any[]>([]);
   const [criteria, setCriteria] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +13,11 @@ export default function AdminPage() {
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [currentUserRole, setCurrentUserRole] = useState("ChuyenVien");
+
+  // Config State
+  const [weightK, setWeightK] = useState(33.33);
+  const [weightA, setWeightA] = useState(33.33);
+  const [weightS, setWeightS] = useState(33.34);
 
   const supabase = createClient();
 
@@ -45,13 +50,22 @@ export default function AdminPage() {
         if (user) setCurrentUserRole(user.vai_tro);
       }
 
-      const [usersResponse, criteriaResponse] = await Promise.all([
+      const [usersResponse, criteriaResponse, configResponse] = await Promise.all([
         supabase.from("nhan_su").select("*").order("created_at", { ascending: false }),
-        supabase.from("tieu_chi_ask").select("*").order("nhom")
+        supabase.from("tieu_chi_ask").select("*").order("nhom"),
+        supabase.from("cau_hinh_he_thong").select("*")
       ]);
       
       if (usersResponse.data) setUsers(usersResponse.data);
       if (criteriaResponse.data) setCriteria(criteriaResponse.data);
+      if (configResponse.data && configResponse.data.length > 0) {
+        const k = configResponse.data.find(c => c.id === 'weight_k')?.gia_tri;
+        const a = configResponse.data.find(c => c.id === 'weight_a')?.gia_tri;
+        const s = configResponse.data.find(c => c.id === 'weight_s')?.gia_tri;
+        if (k) setWeightK(parseFloat(k));
+        if (a) setWeightA(parseFloat(a));
+        if (s) setWeightS(parseFloat(s));
+      }
     } catch (error) {
       console.error("Error fetching admin data:", error);
     } finally {
@@ -114,6 +128,23 @@ export default function AdminPage() {
     }
   };
 
+  const handleSaveConfig = async () => {
+    if (Math.round(weightK + weightA + weightS) !== 100) {
+      return alert("Tổng trọng số phải bằng 100%");
+    }
+    setLoading(true);
+    const updates = [
+      { id: 'weight_k', gia_tri: weightK.toString(), mo_ta: 'Trọng số cho Knowledge (%)' },
+      { id: 'weight_a', gia_tri: weightA.toString(), mo_ta: 'Trọng số cho Attitude (%)' },
+      { id: 'weight_s', gia_tri: weightS.toString(), mo_ta: 'Trọng số cho Skill (%)' }
+    ];
+    
+    const { error } = await supabase.from("cau_hinh_he_thong").upsert(updates);
+    setLoading(false);
+    if (error) alert("Lỗi khi lưu cấu hình: " + error.message);
+    else alert("Lưu cấu hình thành công! Các chỉ số Năng lực sẽ được tính lại dựa trên trọng số này.");
+  };
+
   const openAddCriteria = () => {
     setIsEditCriteria(false);
     setCritName("");
@@ -164,26 +195,30 @@ export default function AdminPage() {
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h1 className="text-3xl font-bold tracking-tight text-white">Quản trị Hệ thống</h1>
         <div className="flex items-center gap-4">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:ring-1 focus:ring-primary/50 outline-none"
-            />
-          </div>
-          <button 
-            onClick={() => exportToCSV(activeTab === 'users' ? filteredUsers : filteredCriteria, activeTab === 'users' ? 'nhan_su' : 'tieu_chi')} 
-            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors text-sm"
-          >
-            <Download className="w-4 h-4" /> Xuất CSV
-          </button>
+          {activeTab !== 'config' && (
+            <>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Tìm kiếm..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm text-white focus:ring-1 focus:ring-primary/50 outline-none"
+                />
+              </div>
+              <button 
+                onClick={() => exportToCSV(activeTab === 'users' ? filteredUsers : filteredCriteria, activeTab === 'users' ? 'nhan_su' : 'tieu_chi')} 
+                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+              >
+                <Download className="w-4 h-4" /> Xuất CSV
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      <div className="flex gap-4 border-b border-white/10 pb-4">
+      <div className="flex gap-4 border-b border-white/10 pb-4 overflow-x-auto whitespace-nowrap">
         <button
           onClick={() => setActiveTab("users")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
@@ -202,6 +237,17 @@ export default function AdminPage() {
           <Settings className="w-5 h-5" />
           Tiêu chí Đánh giá (ASK)
         </button>
+        {currentUserRole === "Admin" && (
+          <button
+            onClick={() => setActiveTab("config")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              activeTab === "config" ? "bg-primary text-white" : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Sliders className="w-5 h-5" />
+            Cấu hình Trọng số (K-A-S)
+          </button>
+        )}
       </div>
 
       <div className="glass-panel p-6">
@@ -258,7 +304,7 @@ export default function AdminPage() {
               </table>
             </div>
           </div>
-        ) : (
+        ) : activeTab === "criteria" ? (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Tiêu chí Đánh giá</h2>
@@ -306,6 +352,66 @@ export default function AdminPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-2xl mx-auto space-y-8 py-4">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-white mb-2">Tùy biến Thuật toán K-A-S</h2>
+              <p className="text-gray-400">Điều chỉnh mức độ quan trọng của từng yếu tố Năng lực khi tính Tổng điểm. Tổng 3 yếu tố phải bằng 100%.</p>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="p-4 bg-white/5 rounded-xl border border-blue-500/20">
+                <div className="flex justify-between mb-2">
+                  <label className="font-semibold text-blue-400">Knowledge (Kiến thức / Hiệu suất MBO)</label>
+                  <span className="font-bold text-white">{weightK}%</span>
+                </div>
+                <input 
+                  type="range" min="0" max="100" step="1"
+                  value={weightK} onChange={(e) => setWeightK(Number(e.target.value))}
+                  className="w-full accent-blue-500" 
+                />
+              </div>
+
+              <div className="p-4 bg-white/5 rounded-xl border border-purple-500/20">
+                <div className="flex justify-between mb-2">
+                  <label className="font-semibold text-purple-400">Attitude (Thái độ)</label>
+                  <span className="font-bold text-white">{weightA}%</span>
+                </div>
+                <input 
+                  type="range" min="0" max="100" step="1"
+                  value={weightA} onChange={(e) => setWeightA(Number(e.target.value))}
+                  className="w-full accent-purple-500" 
+                />
+              </div>
+
+              <div className="p-4 bg-white/5 rounded-xl border border-orange-500/20">
+                <div className="flex justify-between mb-2">
+                  <label className="font-semibold text-orange-400">Skill (Kỹ năng mềm)</label>
+                  <span className="font-bold text-white">{weightS}%</span>
+                </div>
+                <input 
+                  type="range" min="0" max="100" step="1"
+                  value={weightS} onChange={(e) => setWeightS(Number(e.target.value))}
+                  className="w-full accent-orange-500" 
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-[#111] rounded-xl border border-white/10">
+                <span className="text-gray-400 font-medium">Tổng cộng:</span>
+                <span className={`text-2xl font-bold ${Math.round(weightK + weightA + weightS) === 100 ? 'text-green-400' : 'text-red-400'}`}>
+                  {Math.round(weightK + weightA + weightS)}%
+                </span>
+              </div>
+
+              <button 
+                onClick={handleSaveConfig}
+                disabled={Math.round(weightK + weightA + weightS) !== 100}
+                className="w-full py-3 glass-button font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Lưu Cấu hình Trọng số
+              </button>
             </div>
           </div>
         )}
