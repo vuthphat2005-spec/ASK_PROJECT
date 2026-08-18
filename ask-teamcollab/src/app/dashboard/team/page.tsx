@@ -19,7 +19,7 @@ export default function TeamDashboardPage() {
     setLoading(true);
     try {
       // Fetch all users
-      const { data: users } = await supabase.from("nhan_su").select("id, ho_ten, vai_tro, email").eq("trang_thai", "HoatDong");
+      const { data: users } = await supabase.from("nhan_su").select("id, ho_ten, vai_tro, email, chuc_vu").eq("trang_thai", "HoatDong");
       
       // Fetch MBOs (Knowledge)
       const { data: mbos } = await supabase.from("muc_tieu_mbo").select("nhan_su_id, diem_nghiem_thu");
@@ -194,7 +194,7 @@ export default function TeamDashboardPage() {
                       </td>
                       <td className="p-4">
                         <div className="font-medium text-white">{u.ho_ten}</div>
-                        <div className="text-xs text-gray-400">{u.vai_tro}</div>
+                        <div className="text-xs text-gray-400">{u.chuc_vu || u.vai_tro}</div>
                       </td>
                       <td className="p-4 text-center">
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border-2 border-blue-500/30 text-blue-400 font-bold">

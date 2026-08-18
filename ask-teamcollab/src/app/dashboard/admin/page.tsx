@@ -269,6 +269,7 @@ export default function AdminPage() {
                   <tr className="border-b border-white/10 text-gray-400">
                     <th className="py-3 px-4 font-medium">Họ và tên</th>
                     <th className="py-3 px-4 font-medium">Email</th>
+                    <th className="py-3 px-4 font-medium">Chức vụ</th>
                     <th className="py-3 px-4 font-medium">Vai trò</th>
                     <th className="py-3 px-4 font-medium">Trạng thái</th>
                     <th className="py-3 px-4 font-medium text-right">Thao tác</th>
@@ -279,6 +280,7 @@ export default function AdminPage() {
                     <tr key={user.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                       <td className="py-3 px-4">{user.ho_ten}</td>
                       <td className="py-3 px-4 text-gray-400">{user.email}</td>
+                      <td className="py-3 px-4 text-gray-400">{user.chuc_vu || "---"}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           user.vai_tro === 'Admin' ? 'bg-red-500/20 text-red-400' :
@@ -329,6 +331,7 @@ export default function AdminPage() {
                   <tr className="border-b border-white/10 text-gray-400">
                     <th className="py-3 px-4 font-medium">Tên tiêu chí</th>
                     <th className="py-3 px-4 font-medium">Nhóm</th>
+                    <th className="py-3 px-4 font-medium">Thang điểm</th>
                     <th className="py-3 px-4 font-medium">Mô tả</th>
                     <th className="py-3 px-4 font-medium text-right">Thao tác</th>
                   </tr>
@@ -344,6 +347,7 @@ export default function AdminPage() {
                           {item.nhom}
                         </span>
                       </td>
+                      <td className="py-3 px-4 text-gray-400">{item.thang_diem_toi_da || 5}</td>
                       <td className="py-3 px-4 text-gray-400 text-sm max-w-xs truncate" title={item.mo_ta}>{item.mo_ta}</td>
                       <td className="py-3 px-4 flex justify-end gap-2">
                         {currentUserRole === "Admin" && (
@@ -443,6 +447,10 @@ export default function AdminPage() {
                 </select>
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Chức vụ</label>
+                <input value={userChucVu} onChange={(e) => setUserChucVu(e.target.value)} type="text" placeholder="VD: Trưởng phòng, Kế toán..." className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-2 text-white" />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Trạng thái</label>
                 <select value={userStatus} onChange={(e) => setUserStatus(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-2 text-white">
                   <option value="HoatDong">Hoạt động</option>
@@ -473,7 +481,12 @@ export default function AdminPage() {
                 <select value={critGroup} onChange={(e) => setCritGroup(e.target.value)} className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-2 text-white">
                   <option value="Attitude">Attitude (Thái độ)</option>
                   <option value="Skill">Skill (Kỹ năng)</option>
+                  <option value="Knowledge">Knowledge (Kiến thức)</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Thang điểm (Max)</label>
+                <input required value={critThangDiem} onChange={(e) => setCritThangDiem(Number(e.target.value))} type="number" min="1" max="100" className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-2 text-white" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-1">Mô tả chi tiết</label>

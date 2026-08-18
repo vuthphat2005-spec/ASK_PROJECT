@@ -201,13 +201,16 @@ function PeerReviewTab({ peers, criteria, currentUser, supabase }: { peers: any[
     if (!currentUser || !selectedPeer) return;
 
     // Build insert payload
-    const inserts = Object.entries(ratings).map(([tieuChiId, score]) => ({
-      nguoi_danh_gia_id: currentUser.id,
-      nguoi_duoc_danh_gia_id: selectedPeer,
-      tieu_chi_id: tieuChiId,
-      diem_danh_gia: score * 20, // 5 sao = 100 điểm
-      nhan_xet: comments[tieuChiId] || ""
-    }));
+    const inserts = Object.entries(ratings).map(([tieuChiId, score]) => {
+      const maxScore = criteria.find(c => c.id === tieuChiId)?.thang_diem_toi_da || 5;
+      return {
+        nguoi_danh_gia_id: currentUser.id,
+        nguoi_duoc_danh_gia_id: selectedPeer,
+        tieu_chi_id: tieuChiId,
+        diem_danh_gia: (score / maxScore) * 100,
+        nhan_xet: comments[tieuChiId] || ""
+      };
+    });
 
     if (inserts.length === 0) {
       alert("Vui lòng đánh giá ít nhất 1 tiêu chí.");
@@ -273,14 +276,26 @@ function PeerReviewTab({ peers, criteria, currentUser, supabase }: { peers: any[
                         {item.nhom}
                       </span>
                     </label>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star 
-                          key={star} 
-                          onClick={() => handleStarClick(item.id, star)}
-                          className={`w-6 h-6 cursor-pointer transition-colors ${star <= currentStar ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-yellow-400/50'}`} 
+                    <div className="flex gap-1 items-center">
+                      {item.thang_diem_toi_da <= 10 ? (
+                        Array.from({ length: item.thang_diem_toi_da || 5 }, (_, i) => i + 1).map(star => (
+                          <Star 
+                            key={star} 
+                            onClick={() => handleStarClick(item.id, star)}
+                            className={`w-6 h-6 cursor-pointer transition-colors ${star <= currentStar ? 'text-yellow-400 fill-yellow-400' : 'text-gray-600 hover:text-yellow-400/50'}`} 
+                          />
+                        ))
+                      ) : (
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max={item.thang_diem_toi_da}
+                          value={currentStar || ""}
+                          onChange={(e) => setRatings(prev => ({ ...prev, [item.id]: Number(e.target.value) }))}
+                          className="w-20 bg-[#111] border border-white/20 rounded px-2 py-1 text-right text-white focus:outline-none focus:border-primary"
+                          placeholder={`0-${item.thang_diem_toi_da}`}
                         />
-                      ))}
+                      )}
                     </div>
                   </div>
                   <p className="text-xs text-gray-400 mb-2">{item.mo_ta}</p>
