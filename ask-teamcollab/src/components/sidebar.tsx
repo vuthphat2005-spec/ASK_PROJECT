@@ -14,7 +14,7 @@ const navItems = [
   { href: "/dashboard/evaluate", icon: Users, label: "Đánh giá 360°" },
   { href: "/dashboard/storage", icon: HardDrive, label: "Kho Tài nguyên" },
   { href: "/dashboard/profile", icon: Users, label: "Hồ sơ cá nhân" },
-  { href: "/dashboard/admin", icon: Settings, label: "Cấu hình Hệ thống" },
+  { href: "/dashboard/admin", icon: Settings, label: "Quản trị Hệ thống" },
   { href: "/dashboard/admin/guide", icon: Settings, label: "Cẩm nang Hệ thống" },
 ];
 

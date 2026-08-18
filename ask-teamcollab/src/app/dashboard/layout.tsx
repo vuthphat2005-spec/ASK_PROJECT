@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import Sidebar from "@/components/sidebar";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function DashboardLayout({
   children,
 }: {
