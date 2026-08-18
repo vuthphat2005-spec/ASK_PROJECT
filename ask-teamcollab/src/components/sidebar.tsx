@@ -10,7 +10,9 @@ const navItems = [
   { href: "/dashboard/projects", icon: FolderKanban, label: "Quản lý Dự án" },
   { href: "/dashboard/mbo", icon: CheckSquare, label: "Công việc (MBO)" },
   { href: "/dashboard/evaluate", icon: Users, label: "Đánh giá 360°" },
+  { href: "/dashboard/profile", icon: Users, label: "Hồ sơ cá nhân" },
   { href: "/dashboard/admin", icon: Settings, label: "Cấu hình Hệ thống" },
+  { href: "/dashboard/admin/guide", icon: Settings, label: "Cẩm nang Hệ thống" },
 ];
 
 export default function Sidebar({ role }: { role: string }) {
@@ -25,8 +27,8 @@ export default function Sidebar({ role }: { role: string }) {
   return (
     <aside className="w-64 flex-shrink-0 border-r border-white/10 glass-panel h-screen sticky top-0 flex flex-col z-20">
       <div className="p-6 border-b border-white/10 flex items-center gap-3">
-        <div className="w-8 h-8 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <div className="w-8 h-8 bg-primary/20 rounded flex items-center justify-center font-bold text-primary">
+          TC
         </div>
         <div>
           <h2 className="font-bold text-lg tracking-tight">TeamCollab</h2>
@@ -38,6 +40,7 @@ export default function Sidebar({ role }: { role: string }) {
         {navItems.map((item) => {
           // Lọc hiển thị theo quyền
           if (item.href === "/dashboard/admin" && role !== "Admin") return null;
+          if (item.href === "/dashboard/admin/guide" && role !== "Admin") return null;
           if (item.href === "/dashboard/projects" && role !== "Admin" && role !== "QuanLy") return null;
 
           const isActive = pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/dashboard");

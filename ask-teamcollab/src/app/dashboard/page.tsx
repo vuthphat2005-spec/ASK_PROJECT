@@ -12,13 +12,50 @@ export default async function DashboardPage() {
     .eq("email", session?.user?.email)
     .single();
 
-  // Mock data for the radar chart for now
-  // Real implementation would query MBO and DanhGia_Cheo tables
+  // Fetch MBO data (Knowledge)
+  const { data: mbos } = await supabase
+    .from("muc_tieu_mbo")
+    .select("diem_nghiem_thu")
+    .eq("nhan_su_id", user?.id)
+    .not("diem_nghiem_thu", "is", null);
+
+  const avgK = mbos && mbos.length > 0 
+    ? mbos.reduce((acc: number, curr: any) => acc + (curr.diem_nghiem_thu || 0), 0) / mbos.length 
+    : 0;
+
+  // Fetch 360 reviews (Attitude & Skill)
+  const { data: reviews } = await supabase
+    .from("danh_gia_cheo")
+    .select(`diem_sao, tieu_chi_ask!inner(nhom)`)
+    .eq("nguoi_duoc_danh_gia_id", user?.id);
+
+  let totalA = 0, countA = 0;
+  let totalS = 0, countS = 0;
+
+  if (reviews) {
+    reviews.forEach((r: any) => {
+      // diem_sao is 1-5, so multiply by 20 to convert to 100-point scale
+      const score100 = r.diem_sao * 20; 
+      if (r.tieu_chi_ask.nhom === 'Attitude') {
+        totalA += score100;
+        countA++;
+      } else if (r.tieu_chi_ask.nhom === 'Skill') {
+        totalS += score100;
+        countS++;
+      }
+    });
+  }
+
+  const avgA = countA > 0 ? totalA / countA : 0;
+  const avgS = countS > 0 ? totalS / countS : 0;
+
   const mockRadarData = [
-    { subject: 'MBO (Knowledge)', A: 85, fullMark: 100 },
-    { subject: 'Attitude', A: 90, fullMark: 100 },
-    { subject: 'Skill', A: 75, fullMark: 100 },
+    { subject: 'Knowledge (MBO)', A: Math.round(avgK), fullMark: 100 },
+    { subject: 'Attitude (360°)', A: Math.round(avgA), fullMark: 100 },
+    { subject: 'Skill (360°)', A: Math.round(avgS), fullMark: 100 },
   ];
+
+  const totalScore = (avgK * 0.3) + (avgA * 0.35) + (avgS * 0.35);
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -65,7 +102,7 @@ export default async function DashboardPage() {
           <div className="glass-panel rounded-2xl p-6 bg-gradient-to-br from-primary/10 to-transparent">
             <h2 className="text-lg font-semibold mb-2">Điểm tổng hợp</h2>
             <div className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">
-              83.5
+              {totalScore.toFixed(1)}
             </div>
             <p className="text-sm text-gray-400 mt-2">
               (30% MBO + 35% Attitude + 35% Skill)
