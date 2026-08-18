@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 
 export default async function ProjectsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: projects } = await supabase.from("du_an").select("*").order("created_at", { ascending: false });
 
   return (

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderKanban, CheckSquare, Settings, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, FolderKanban, CheckSquare, Settings, Users, LogOut, HardDrive } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { href: "/dashboard/projects", icon: FolderKanban, label: "Quản lý Dự án" },
   { href: "/dashboard/mbo", icon: CheckSquare, label: "Công việc (MBO)" },
   { href: "/dashboard/evaluate", icon: Users, label: "Đánh giá 360°" },
+  { href: "/dashboard/storage", icon: HardDrive, label: "Kho Tài nguyên" },
   { href: "/dashboard/profile", icon: Users, label: "Hồ sơ cá nhân" },
   { href: "/dashboard/admin", icon: Settings, label: "Cấu hình Hệ thống" },
   { href: "/dashboard/admin/guide", icon: Settings, label: "Cẩm nang Hệ thống" },

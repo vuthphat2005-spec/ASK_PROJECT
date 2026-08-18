@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 
 export default async function MBOTasksPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Lấy các mục tiêu MBO của nhân sự đang đăng nhập
   const { data: { session } } = await supabase.auth.getSession();
