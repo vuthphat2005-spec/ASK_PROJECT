@@ -53,13 +53,13 @@ export default function TeamDashboardPage() {
           : 0;
 
         // A Score (Trung bình Attitude)
-        const userAttitude = reviews?.filter(r => r.nguoi_duoc_danh_gia_id === user.id && r.tieu_chi_ask?.nhom === 'Attitude') || [];
+        const userAttitude = reviews?.filter(r => r.nguoi_duoc_danh_gia_id === user.id && (r.tieu_chi_ask as any)?.nhom === 'Attitude') || [];
         const aScore = userAttitude.length > 0
           ? userAttitude.reduce((acc, curr) => acc + (curr.diem_danh_gia || 0), 0) / userAttitude.length
           : 0;
 
         // S Score (Trung bình Skill)
-        const userSkill = reviews?.filter(r => r.nguoi_duoc_danh_gia_id === user.id && r.tieu_chi_ask?.nhom === 'Skill') || [];
+        const userSkill = reviews?.filter(r => r.nguoi_duoc_danh_gia_id === user.id && (r.tieu_chi_ask as any)?.nhom === 'Skill') || [];
         const sScore = userSkill.length > 0
           ? userSkill.reduce((acc, curr) => acc + (curr.diem_danh_gia || 0), 0) / userSkill.length
           : 0;
